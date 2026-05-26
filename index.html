@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bolão da Copa</title>
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Copa do Mundo FIFA 2026</p>
+        <h1>Bolão da Copa</h1>
+      </div>
+      <img class="fifa-logo" src="https://commons.wikimedia.org/wiki/Special:FilePath/2026%20FIFA%20World%20Cup%20emblem%20(horizontal%2C%20with%20wordmark).svg" alt="FIFA World Cup 2026" />
+      <nav class="tabs" aria-label="Navegacao principal">
+        <button class="tab active" type="button" data-tab="players">Jogadores</button>
+        <button class="tab" type="button" data-tab="bets">Palpites</button>
+        <button class="tab" type="button" data-tab="results">Resultados</button>
+        <button class="tab" type="button" data-tab="leaderboard">Classificacao</button>
+        <button class="tab" type="button" data-tab="admin">Admin</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div id="heroFlags" class="hero-flags" aria-hidden="true"></div>
+        <div class="intro-copy">
+          <p class="eyebrow">48 selecoes, 104 jogos, um campeao</p>
+          <h2>Cadastre jogadores, simule a Copa ate a final e veja a classificacao geral do bolao.</h2>
+          <p>
+            Pontos: placar exato vale 5, vencedor correto vale 3, empate correto vale 1.
+            No mata-mata, cada classificado correto soma mais 10. O quarto colocado vale 20,
+            terceiro 30, vice 40 e campeao 50.
+          </p>
+        </div>
+        <div class="score-rules" aria-label="Tabela de pontuacao">
+          <img class="hero-logo" src="https://commons.wikimedia.org/wiki/Special:FilePath/2026%20FIFA%20World%20Cup%20emblem%20(with%20wordmark).svg" alt="FIFA World Cup 2026" />
+          <span><strong>5</strong> placar exato</span>
+          <span><strong>3</strong> vencedor</span>
+          <span><strong>1</strong> empate</span>
+          <span><strong>10</strong> classificado</span>
+          <span><strong>50</strong> campeao</span>
+        </div>
+      </section>
+
+      <section id="players" class="panel active" aria-labelledby="players-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Entrada do bolao</p>
+            <h2 id="players-title">Jogadores</h2>
+          </div>
+          <button id="resetData" class="ghost danger" type="button">Limpar bolao</button>
+        </div>
+        <form id="playerForm" class="inline-form">
+          <label>
+            Nome do jogador
+            <input id="playerName" type="text" placeholder="Ex.: Ana, Bruno, Familia Silva" maxlength="40" required />
+          </label>
+          <button type="submit">Cadastrar</button>
+        </form>
+        <div class="split">
+          <div>
+            <h3>Jogadores cadastrados</h3>
+            <div id="playersList" class="list empty-state"></div>
+          </div>
+          <div>
+            <h3>Jogador ativo</h3>
+            <label>
+              Escolha quem esta apostando
+              <select id="activePlayer"></select>
+            </label>
+            <p class="hint">Cada jogador tem uma simulacao completa salva separadamente no navegador.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="bets" class="panel" aria-labelledby="bets-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Simulacao individual</p>
+            <h2 id="bets-title">Palpites dos jogos</h2>
+          </div>
+          <button id="saveBet" type="button">Salvar palpites</button>
+        </div>
+        <div id="noPlayerBet" class="empty-state">Cadastre ou selecione um jogador para liberar a simulacao.</div>
+        <div id="betArea" class="workspace hidden">
+          <div class="bet-tools">
+            <button id="autoFillBet" class="ghost" type="button">Preencher exemplo</button>
+            <button id="clearBet" class="ghost" type="button">Limpar palpites do jogador</button>
+          </div>
+          <h3>Fase de grupos</h3>
+          <div id="groupBetGrid" class="group-grid"></div>
+          <div class="section-head compact">
+            <div>
+              <h3>Mata-mata projetado</h3>
+              <p class="hint">O chaveamento usa os classificados da sua simulacao. Avance fase por fase.</p>
+            </div>
+            <button id="buildBracket" class="ghost" type="button">Atualizar chave</button>
+          </div>
+          <div id="bracketBet" class="bracket"></div>
+          <div class="placements">
+            <label>Campeao
+              <select id="betChampion"></select>
+            </label>
+            <label>Vice
+              <select id="betRunnerUp"></select>
+            </label>
+            <label>Terceiro
+              <select id="betThird"></select>
+            </label>
+            <label>Quarto
+              <select id="betFourth"></select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section id="results" class="panel" aria-labelledby="results-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Apuracao oficial</p>
+            <h2 id="results-title">Resultados reais</h2>
+          </div>
+          <button id="saveResults" type="button">Salvar resultados</button>
+        </div>
+        <p class="hint">
+          Preencha os placares reais conforme os jogos acontecerem. A classificacao geral considera apenas jogos e premios ja informados.
+        </p>
+        <div class="bet-tools">
+          <button id="autoFillResults" class="ghost" type="button">Carregar exemplo</button>
+          <button id="clearResults" class="ghost" type="button">Limpar resultados</button>
+        </div>
+        <h3>Fase de grupos</h3>
+        <div id="groupResultGrid" class="group-grid"></div>
+        <div class="section-head compact">
+          <div>
+            <h3>Mata-mata real</h3>
+            <p class="hint">Use os classificados e vencedores oficiais para pontuar o mata-mata.</p>
+          </div>
+          <button id="buildResultBracket" class="ghost" type="button">Atualizar chave real</button>
+        </div>
+        <div id="bracketResults" class="bracket"></div>
+        <div class="placements">
+          <label>Campeao
+            <select id="resultChampion"></select>
+          </label>
+          <label>Vice
+            <select id="resultRunnerUp"></select>
+          </label>
+          <label>Terceiro
+            <select id="resultThird"></select>
+          </label>
+          <label>Quarto
+            <select id="resultFourth"></select>
+          </label>
+        </div>
+      </section>
+
+      <section id="leaderboard" class="panel" aria-labelledby="leaderboard-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Ranking ao vivo</p>
+            <h2 id="leaderboard-title">Classificacao geral</h2>
+          </div>
+          <button id="refreshLeaderboard" type="button">Recalcular</button>
+        </div>
+        <div id="leaderboardTable" class="leaderboard"></div>
+      </section>
+
+      <section id="admin" class="panel" aria-labelledby="admin-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Painel separado</p>
+            <h2 id="admin-title">Administrador</h2>
+          </div>
+          <button id="refreshAdmin" type="button">Atualizar painel</button>
+        </div>
+        <div id="adminSummary" class="summary-grid"></div>
+        <div class="section-head compact">
+          <div>
+            <h3>Participantes</h3>
+            <p class="hint">Gerencie nomes, remova participantes e acompanhe a soma total de cada competidor.</p>
+          </div>
+        </div>
+        <div id="adminPlayers" class="admin-table"></div>
+      </section>
+
+      <section class="travel-panel" aria-labelledby="passport-title">
+        <div class="section-head compact">
+          <div>
+            <p class="eyebrow">Passaporte da Copa</p>
+            <h2 id="passport-title">Selecoes na rota</h2>
+          </div>
+        </div>
+        <div id="selectionPassport" class="selection-passport"></div>
+        <p class="source-note">
+          Bandeiras via FlagCDN. Emblema 2026 via Wikimedia Commons.
+        </p>
+      </section>
+    </main>
+
+    <template id="matchTemplate">
+      <div class="match-row">
+        <span class="team team-a"></span>
+        <input class="score score-a" type="number" min="0" max="30" inputmode="numeric" aria-label="Gols time A" />
+        <span class="separator">x</span>
+        <input class="score score-b" type="number" min="0" max="30" inputmode="numeric" aria-label="Gols time B" />
+        <span class="team team-b"></span>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
