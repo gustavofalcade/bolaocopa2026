@@ -125,11 +125,22 @@
           </div>
           <button id="saveResults" type="button">Salvar resultados</button>
         </div>
+        <div id="resultAdminGate" class="admin-gate">
+          <div>
+            <strong>Acesso do administrador</strong>
+            <p class="hint">Somente o admin pode inserir ou alterar resultados oficiais.</p>
+          </div>
+          <form id="adminLoginForm" class="admin-login">
+            <input id="adminPin" type="password" inputmode="numeric" placeholder="Senha do admin" autocomplete="current-password" />
+            <button type="submit">Entrar</button>
+          </form>
+          <button id="adminLogout" class="ghost hidden" type="button">Bloquear painel</button>
+        </div>
         <p class="hint">
-          Preencha os placares reais conforme os jogos acontecerem. A classificacao geral considera apenas jogos e premios ja informados.
+          A primeira fase ainda esta em andamento. A classificacao geral considera apenas jogos e premios ja informados.
         </p>
         <div class="bet-tools">
-          <button id="autoFillResults" class="ghost" type="button">Carregar exemplo</button>
+          <button id="autoFillResults" class="ghost" type="button">Carregar resultados disponiveis</button>
           <button id="clearResults" class="ghost" type="button">Limpar resultados</button>
         </div>
         <h3>Fase de grupos</h3>

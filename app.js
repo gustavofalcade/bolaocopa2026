@@ -1,4 +1,6 @@
 const STORAGE_KEY = "bolao-copa-2026-v1";
+const ADMIN_PIN = "2026";
+let adminUnlocked = sessionStorage.getItem("bolao-admin-unlocked") === "true";
 
 const GROUPS = {
   A: ["Mexico", "Africa do Sul", "Coreia do Sul", "Tchequia"],
@@ -9,9 +11,9 @@ const GROUPS = {
   F: ["Paises Baixos", "Japao", "Suecia", "Tunisia"],
   G: ["Belgica", "Egito", "Ira", "Nova Zelandia"],
   H: ["Espanha", "Cabo Verde", "Arabia Saudita", "Uruguai"],
-  I: ["Franca", "Senegal", "Suriname", "Noruega"],
+  I: ["Franca", "Senegal", "Israel", "Noruega"],
   J: ["Argentina", "Argelia", "Austria", "Jordania"],
-  K: ["Portugal", "Jamaica", "Uzbequistao", "Colombia"],
+  K: ["Portugal", "RD Congo", "Uzbequistao", "Colombia"],
   L: ["Inglaterra", "Croacia", "Gana", "Panama"],
 };
 
@@ -44,7 +46,7 @@ const TEAM_FLAGS = {
   Haiti: "ht",
   Inglaterra: "gb-eng",
   Ira: "ir",
-  Jamaica: "jm",
+  Israel: "il",
   Japao: "jp",
   Jordania: "jo",
   Marrocos: "ma",
@@ -57,10 +59,10 @@ const TEAM_FLAGS = {
   Paraguai: "py",
   Portugal: "pt",
   Qatar: "qa",
+  "RD Congo": "cd",
   Senegal: "sn",
   Suecia: "se",
   Suica: "ch",
-  Suriname: "sr",
   Tchequia: "cz",
   Tunisia: "tn",
   Turquia: "tr",
@@ -87,16 +89,52 @@ const GROUP_MATCHES = Object.entries(GROUPS).flatMap(([group, teams]) => {
   }));
 });
 
+const AVAILABLE_GROUP_RESULTS = [
+  { id: "I4", a: 3, b: 2, label: "Noruega 3 x 2 Senegal" },
+  { id: "J3", a: 2, b: 0, label: "Argentina 2 x 0 Austria" },
+  { id: "J4", a: 1, b: 2, label: "Jordania 1 x 2 Argelia" },
+  { id: "K1", a: 1, b: 1, label: "Portugal 1 x 1 RD Congo" },
+  { id: "K3", a: 5, b: 0, label: "Portugal 5 x 0 Uzbequistao" },
+  { id: "L1", a: 4, b: 2, label: "Inglaterra 4 x 2 Croacia" },
+  { id: "L3", a: 0, b: 0, label: "Inglaterra 0 x 0 Gana" },
+  { id: "L4", a: 0, b: 1, label: "Panama 0 x 1 Croacia" },
+];
+
 const state = loadState();
 
 function loadState() {
   const fallback = { players: [], activePlayerId: "", results: blankEntry() };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return saved ? { ...fallback, ...saved } : fallback;
+    return migrateState(saved ? { ...fallback, ...saved } : fallback);
   } catch {
     return fallback;
   }
+}
+
+function migrateState(savedState) {
+  const replacements = { Suriname: "Israel", Jamaica: "RD Congo" };
+  const replaceTeam = (team) => replacements[team] || team;
+  const migrateEntry = (entry) => {
+    if (!entry) return;
+    entry.bracket?.flat()?.forEach((match) => {
+      match.a = replaceTeam(match.a);
+      match.b = replaceTeam(match.b);
+    });
+    entry.thirdPlace?.forEach((match) => {
+      match.a = replaceTeam(match.a);
+      match.b = replaceTeam(match.b);
+    });
+    Object.keys(entry.placements || {}).forEach((key) => {
+      entry.placements[key] = replaceTeam(entry.placements[key]);
+    });
+  };
+
+  savedState.results ||= blankEntry();
+  migrateEntry(savedState.results);
+  savedState.players?.forEach((player) => migrateEntry(player.bet));
+  applyAvailableResults(savedState.results, false);
+  return savedState;
 }
 
 function saveState() {
@@ -218,6 +256,7 @@ function renderResultsArea() {
   renderGroupGrid(byId("groupResultGrid"), state.results.groupScores, "result");
   renderBracket(byId("bracketResults"), state.results, "result");
   populatePlacements("result", state.results);
+  syncResultAdminAccess();
 }
 
 function renderGroupGrid(container, scores, scope) {
@@ -252,6 +291,12 @@ function createMatchRow(match, scores, scope) {
 
 function handleScoreInput(event) {
   const row = event.target.closest(".match-row");
+  if (row.dataset.scope.startsWith("result") && !adminUnlocked) {
+    event.target.value = "";
+    toast("Entre como administrador para alterar resultados.");
+    renderResultsArea();
+    return;
+  }
   const entry = entryFromScope(row.dataset.scope);
   const side = event.target.classList.contains("score-a") ? "a" : "b";
   entry.groupScores ||= {};
@@ -469,6 +514,11 @@ function populatePlacements(prefix, entry) {
       select.appendChild(option);
     });
     select.onchange = () => {
+      if (prefix === "result" && !adminUnlocked) {
+        toast("Entre como administrador para alterar resultados.");
+        populatePlacements(prefix, entry);
+        return;
+      }
       entry.placements[key] = select.value;
       saveState();
       renderLeaderboard();
@@ -477,6 +527,10 @@ function populatePlacements(prefix, entry) {
 }
 
 function saveVisibleScores(scope) {
+  if (scope === "result" && !adminUnlocked) {
+    toast("Entre como administrador para salvar resultados.");
+    return;
+  }
   const entry = scope === "result" ? state.results : activeBet();
   if (!entry) return;
   document.querySelectorAll(`[data-scope="${scope}-group"]`).forEach((row) => {
@@ -492,6 +546,21 @@ function saveVisibleScores(scope) {
   saveState();
   renderAll();
   toast(scope === "result" ? "Resultados salvos." : "Palpites salvos.");
+}
+
+function syncResultAdminAccess() {
+  const panel = byId("results");
+  if (!panel) return;
+  panel.classList.toggle("admin-locked", !adminUnlocked);
+  byId("adminLoginForm").classList.toggle("hidden", adminUnlocked);
+  byId("adminLogout").classList.toggle("hidden", !adminUnlocked);
+  panel.querySelectorAll("input, select, button").forEach((control) => {
+    if (control.closest("#resultAdminGate")) {
+      control.disabled = false;
+      return;
+    }
+    control.disabled = !adminUnlocked;
+  });
 }
 
 function playerScore(player) {
@@ -756,6 +825,27 @@ function clearEntry(entry) {
   entry.placements = { champion: "", runnerUp: "", third: "", fourth: "" };
 }
 
+function applyAvailableResults(entry, overwrite) {
+  entry ||= blankEntry();
+  entry.groupScores ||= {};
+  AVAILABLE_GROUP_RESULTS.forEach((match) => {
+    const keyA = scoreKey(match.id, "a");
+    const keyB = scoreKey(match.id, "b");
+    if (overwrite || entry.groupScores[keyA] === undefined || entry.groupScores[keyA] === null) {
+      entry.groupScores[keyA] = match.a;
+    }
+    if (overwrite || entry.groupScores[keyB] === undefined || entry.groupScores[keyB] === null) {
+      entry.groupScores[keyB] = match.b;
+    }
+  });
+}
+
+function loadAvailableResults() {
+  applyAvailableResults(state.results, true);
+  state.results.bracket = buildInitialBracket(state.results.groupScores);
+  rebuildNextRounds(state.results);
+}
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -827,6 +917,27 @@ function bindEvents() {
     toast("Bolao limpo.");
   });
 
+  byId("adminLoginForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const pin = byId("adminPin").value.trim();
+    if (pin !== ADMIN_PIN) {
+      toast("Senha do administrador incorreta.");
+      return;
+    }
+    adminUnlocked = true;
+    sessionStorage.setItem("bolao-admin-unlocked", "true");
+    byId("adminPin").value = "";
+    syncResultAdminAccess();
+    toast("Painel de resultados liberado.");
+  });
+
+  byId("adminLogout").addEventListener("click", () => {
+    adminUnlocked = false;
+    sessionStorage.removeItem("bolao-admin-unlocked");
+    syncResultAdminAccess();
+    toast("Painel de resultados bloqueado.");
+  });
+
   byId("saveBet").addEventListener("click", () => saveVisibleScores("bet"));
   byId("saveResults").addEventListener("click", () => saveVisibleScores("result"));
   byId("refreshLeaderboard").addEventListener("click", () => {
@@ -849,6 +960,10 @@ function bindEvents() {
   });
 
   byId("buildResultBracket").addEventListener("click", () => {
+    if (!adminUnlocked) {
+      toast("Entre como administrador para alterar resultados.");
+      return;
+    }
     state.results.bracket = buildInitialBracket(state.results.groupScores);
     rebuildNextRounds(state.results);
     saveState();
@@ -874,13 +989,21 @@ function bindEvents() {
   });
 
   byId("autoFillResults").addEventListener("click", () => {
-    fillExample(state.results);
+    if (!adminUnlocked) {
+      toast("Entre como administrador para carregar resultados.");
+      return;
+    }
+    loadAvailableResults();
     saveState();
     renderAll();
-    toast("Resultados de exemplo carregados.");
+    toast("Resultados disponiveis carregados.");
   });
 
   byId("clearResults").addEventListener("click", () => {
+    if (!adminUnlocked) {
+      toast("Entre como administrador para limpar resultados.");
+      return;
+    }
     if (!confirm("Limpar todos os resultados reais?")) return;
     clearEntry(state.results);
     saveState();
