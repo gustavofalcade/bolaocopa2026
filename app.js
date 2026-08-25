@@ -11,7 +11,7 @@ const GROUPS = {
   F: ["Paises Baixos", "Japao", "Suecia", "Tunisia"],
   G: ["Belgica", "Egito", "Ira", "Nova Zelandia"],
   H: ["Espanha", "Cabo Verde", "Arabia Saudita", "Uruguai"],
-  I: ["Franca", "Senegal", "Israel", "Noruega"],
+  I: ["Franca", "Senegal", "Iraque", "Noruega"],
   J: ["Argentina", "Argelia", "Austria", "Jordania"],
   K: ["Portugal", "RD Congo", "Uzbequistao", "Colombia"],
   L: ["Inglaterra", "Croacia", "Gana", "Panama"],
@@ -46,7 +46,7 @@ const TEAM_FLAGS = {
   Haiti: "ht",
   Inglaterra: "gb-eng",
   Ira: "ir",
-  Israel: "il",
+  Iraque: "iq",
   Japao: "jp",
   Jordania: "jo",
   Marrocos: "ma",
@@ -113,7 +113,7 @@ function loadState() {
 }
 
 function migrateState(savedState) {
-  const replacements = { Suriname: "Israel", Jamaica: "RD Congo" };
+  const replacements = { Suriname: "Iraque", Israel: "Iraque", Jamaica: "RD Congo" };
   const replaceTeam = (team) => replacements[team] || team;
   const migrateEntry = (entry) => {
     if (!entry) return;
